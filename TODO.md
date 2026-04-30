@@ -13,4 +13,8 @@ Effiziente Stammbäume erstellen und echte links zwischen Files.
 
 - Stammbaumliste Property.
 - Eltern Array und Kinder Array.
-
+### Namengenerator
+- Namen anhand von Regeln generieren
+- Sylbenschema, Genutzte Konsonanten und Vokale, Sylbenlängen, präferierte Folgen.
+- Presets
+- Name Scoring anhand von Geschlecht. Zwei Dimensional.

@@ -6,3 +6,45 @@ available in the app when your plugin is enabled.
 If your plugin does not need CSS, delete this file.
 
 */
+.stammbaum-view {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	border: 1px solid var(--background-modifier-border);
+}
+.stammbaum-element {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	margin: 10px;
+	background-color: brown;
+}
+.stammbaum-parent {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	margin: 10px;
+}
+.stammbaum-parents {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	margin: 10px;
+}
+.stammbaum-date-of-birth {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	margin: 10px;
+}
+.stammbaum-date-of-death {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	margin: 10px;
+}
+.stammbaum-name {
+	font-size: 1.2em;
+	font-weight: bold;
+	margin-bottom: 5px;
+}

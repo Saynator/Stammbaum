@@ -1,6 +1,7 @@
-import {App, Editor, MarkdownView, Modal, normalizePath, Notice, Plugin, TFile} from 'obsidian';
+import {App, Editor, MarkdownView, Modal, normalizePath, Notice, Plugin, WorkspaceLeaf} from 'obsidian';
 import {DEFAULT_SETTINGS, StammbaumPluginSettings, StammbaumPluginSettingsTabs} from "./settings";
 import { getRelevantMetadata } from 'metadata';
+import { StammbaumView, VIEW_TYPE_STAMMBAUM } from 'stammbaumView';
 // Remember to rename these classes and interfaces!
 
 export default class StammbaumPlugin extends Plugin {
@@ -10,10 +11,6 @@ export default class StammbaumPlugin extends Plugin {
 		await this.loadSettings();
 
 		// This creates an icon in the left ribbon.
-		this.addRibbonIcon('dice', 'Sample', (evt: MouseEvent) => {
-			// Called when the user clicks the icon.
-			new Notice('This is a notice!');
-		});
 
 		// This adds a simple command that can be triggered anywhere
 		this.addCommand({
@@ -34,8 +31,8 @@ export default class StammbaumPlugin extends Plugin {
 					new Notice('No active file found.');
 					return;
 				}
-				getRelevantMetadata(currentFile, this.app.vault).then(metadata => {
-					new Notice(`Parents: ${metadata?.parents.join(', ')}, Date of Birth: ${metadata?.dateOfBirth}, Date of Death: ${metadata?.dateofDeath}`);
+				getRelevantMetadata(currentFile, this.app.vault,this.settings).then(metadata => {
+					new Notice(`Parents: ${metadata?.parents.join(', ')}, Date of Birth: ${metadata?.dateOfBirth}, Date of Death: ${metadata?.dateOfDeath}`);
 				}).catch(err => {
 					console.error(err);
 				});
@@ -88,7 +85,41 @@ export default class StammbaumPlugin extends Plugin {
 
 		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
 		//this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
+		this.registerView(
+			VIEW_TYPE_STAMMBAUM,
+			(leaf) => new StammbaumView(leaf, this)
+		);
+		this.addRibbonIcon('dice', 'Open stammbaum', async (evt: MouseEvent) => {
+			// Called when the user  the icon.
+			await this.openStammbaumView();
+		});
 
+	}
+	async openStammbaumView() {
+		const {workspace} = this.app;
+		let leaf: WorkspaceLeaf;
+		const leaves = workspace.getLeavesOfType(VIEW_TYPE_STAMMBAUM);
+		if (leaves.length > 0) { // get the first leaf, if none exists, create a new one
+			if(leaves[0] instanceof WorkspaceLeaf) {
+				leaf = leaves[0];
+			}
+			else {
+				leaf = workspace.getLeaf(false);
+				await leaf.setViewState({
+					type: VIEW_TYPE_STAMMBAUM,
+					active: true,
+				});
+			}
+		}
+		else {
+			leaf = workspace.getLeaf(false);
+			await leaf.setViewState({
+				type: VIEW_TYPE_STAMMBAUM,
+				active: true,
+			});
+
+		}
+		await workspace.revealLeaf(leaf).catch(err => console.error(err));
 	}
 	onunload() {
 		console.debug('unloading plugin');

@@ -1,8 +1,8 @@
 import { TFile, Vault } from "obsidian";
-import {DEFAULT_SETTINGS} from "./settings";
+import {StammbaumPluginSettings} from "./settings";
 
 
-export async function getRelevantMetadata(file: TFile, vault: Vault){
+export async function getRelevantMetadata(file: TFile, vault: Vault, settings: StammbaumPluginSettings){
 	
 	const relevant_metadata = await vault.cachedRead(file).then(data => {
 		if (!data.startsWith('---')) {
@@ -31,37 +31,46 @@ export async function getRelevantMetadata(file: TFile, vault: Vault){
 		- Relationships
 		- 
 		*/
+		console.debug(frontmatter);
 		const parents = Array<string>();
 		let dateOfBirth;
-		let dateofDeath;
-		for (const property in frontmatter?.split(':').entries()){
+		let dateOfDeath;
+		frontmatter?.split(':').forEach((property,i,array) => {
 			const propertyType = property.split('\n').pop();
-			const propertyContent = property.split('\n').slice(0,-1);
-			switch(propertyType){
-				case DEFAULT_SETTINGS.parentsProperty:
-					//PROPERTY TYPE = LIST
-					for(const entry in propertyContent.entries){
-						parents.push(entry.replace('/-/','').trim()); //TODO
-						console.debug(`Found Parent ${entry}`);
-					}
-					console.debug(`Found ${parents.length} Parents`);
-					break;
-				case DEFAULT_SETTINGS.dateOfBirthProperty:
-					//PROPERTY TYPE = STRING
-					dateOfBirth=propertyContent[0]?.trim();
-					break;
-				case DEFAULT_SETTINGS.dateOfDeathProperty:
-					//PROPERTY TYPE = STRING
-					dateofDeath=propertyContent[0]?.trim();
-					break;
-				default:
-					break;
+			const propertyContent = array[i+1]?.split('\n').slice(0,-1);
+			console.debug(property,propertyType,propertyContent);
+			console.debug(settings);
+			if(propertyContent){
+				switch(propertyType?.trim()){
+					case settings.parentsProperty:
+						//PROPERTY TYPE = LIST
+						propertyContent.shift();
+						propertyContent.forEach(entry => {
+							entry = entry.replace('-','').trim();
+							parents.push(entry); //TODO
+							console.debug(`Found Parent ${entry}`);
+						})
+						console.debug(`Found ${parents.length} Parents`);
+						break;
+					case settings.dateOfBirthProperty:
+						//PROPERTY TYPE = STRING
+						dateOfBirth=propertyContent[0]?.trim();
+						break;
+					case settings.dateOfDeathProperty:
+						//PROPERTY TYPE = STRING
+						dateOfDeath=propertyContent[0]?.trim();
+						console.debug(`Found date of death ${dateOfDeath}`);
+						break;
+					default:
+						break;
+				}
 			}
-		}		
+		});		
 		// IN CONTENT
 		//TO BE IMPLEMENTED
-
-		return {dateOfBirth,dateofDeath,parents};
+		console.debug(`Found date of birth ${dateOfBirth} and date of death ${dateOfDeath}`);
+		return {dateOfBirth: dateOfBirth,dateOfDeath: dateOfDeath,parents: parents};
 	});
+	console.debug(relevant_metadata);
 	return relevant_metadata;
 }

@@ -26,7 +26,10 @@ export class StammbaumPluginSettingsTabs extends PluginSettingTab {
 		super(app, plugin);
 		this.plugin = plugin;
 	}
-
+	async loadSettings() {
+		const data = (await this.plugin.loadData()) as Partial<StammbaumPluginSettings> | undefined;
+		this.plugin.settings = Object.assign({}, DEFAULT_SETTINGS, data ?? {});
+	}
 	display(): void {
 		const {containerEl} = this;
 
@@ -52,6 +55,14 @@ export class StammbaumPluginSettingsTabs extends PluginSettingTab {
 					this.plugin.settings.namelistLocation = value;
 					await this.plugin.saveSettings();
 				}));
+
+		/*
+		//
+		//
+		// IDENTIFIER SETTINGS
+		//
+		//
+		*/
 		new Setting(containerEl).setHeading().setName('Identifier');
 
 		

@@ -27,3 +27,6 @@ first-names.txt
 first-name-test2.txt
 first-names-tryzlam.txt
 72777-vornamen-tryzlam.txt
+
+# github
+.github/workflows/lint.yml

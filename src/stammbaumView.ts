@@ -1,7 +1,7 @@
 
 import StammbaumPlugin from 'main';
 import { getRelevantMetadata } from 'metadata';
-import { ItemView, WorkspaceLeaf } from 'obsidian';
+import { ItemView, TFile, WorkspaceLeaf } from 'obsidian';
 export const VIEW_TYPE_STAMMBAUM = 'stammbaum-view';
 export class StammbaumView extends ItemView {
 	plugin: StammbaumPlugin;
@@ -19,7 +19,6 @@ export class StammbaumView extends ItemView {
 	async onOpen() {
 		const container = this.containerEl;
 		container.empty();
-		container.createEl('p', { text: 'Hello, world!' });
 		const stParent = container.createEl('div', { cls: 'stammbaum-parent' });
 
 		const files = this.app.vault.getMarkdownFiles();
@@ -45,7 +44,25 @@ export class StammbaumView extends ItemView {
 			stElement.createEl('p', { text: `Date of Birth: ${relevantMetadata.dateOfBirth}`,cls: 'stammbaum-date-of-birth' });
 			stElement.createEl('p', { text: `Date of Death: ${relevantMetadata.dateOfDeath}`,cls: 'stammbaum-date-of-death' });
 			if(relevantMetadata?.parents) {
-				stElement.createEl('p', { text: `Parents: ${relevantMetadata.parents.join(', ')}`,cls: 'stammbaum-parents' });
+				const stElParents = stElement.createEl('h4', { text: `Parents`,cls: 'stammbaum-parents' });
+				relevantMetadata.parents.forEach(parent => {
+					parent = parent.replace(/["\[\]]/g, '').trim();
+					const parentFile = this.app.metadataCache.getFirstLinkpathDest(parent, '');
+					
+					if (parentFile) {
+					const link = stElParents.createEl('a', {
+						text: parent,
+						cls: 'internal-link'
+					});
+
+					link.addEventListener('click', (evt) => {
+						evt.preventDefault();
+						void this.app.workspace.openLinkText(parent, '', false);
+					});
+					} else {
+						stElParents.createEl('p',{text:parent});
+					}
+				});
 			}
 		}
 	}

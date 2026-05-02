@@ -26,8 +26,8 @@ If your plugin does not need CSS, delete this file.
 	margin: 10px;
 }
 .stammbaum-parents {
-	display: flex;
-	flex-direction: row;
+	display: grid;
+	flex-direction: vertical;
 	align-items: center;
 	margin: 10px;
 }

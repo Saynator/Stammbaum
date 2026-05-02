@@ -30,3 +30,8 @@ first-names-tryzlam.txt
 
 # github
 .github/workflows/lint.yml
+
+# Misc
+
+TODO.md
+AGENTS.md

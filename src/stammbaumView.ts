@@ -10,6 +10,7 @@ class StammbaumElement{
 	dateOfDeath: string
 	parents: string[]
 	htmlElement?: HTMLElement;
+	connectors: Connector[] = [];
 	constructor(name: string, dateOfBirth: string, dateOfDeath: string) {
 		this.name = name;
 		this.dateOfBirth = dateOfBirth;
@@ -51,6 +52,12 @@ export class StammbaumView extends ItemView {
 				return {file, relevantMetadata};
 			})
 		);
+		fileMetadata.sort((a, b) => { // Sort by date of birth
+			if (!a || !b) return 0;
+			const dateA = a.relevantMetadata?.dateOfBirth ? new Date(a.relevantMetadata.dateOfBirth): 0;
+			const dateB = b.relevantMetadata?.dateOfBirth ? new Date(b.relevantMetadata.dateOfBirth): 0;
+			return dateA < dateB ? -1 : dateA > dateB ? 1 : 0;
+		});
 		for (const fileMeta of fileMetadata) {
 			const file = fileMeta?.file;
 			const relevantMetadata = fileMeta?.relevantMetadata;
@@ -63,9 +70,16 @@ export class StammbaumView extends ItemView {
 				relevantMetadata.dateOfDeath ?? ''
 			);
 			stElement.htmlElement = stParent.createEl('div', { cls: 'stammbaum-element' });
-			stElement.htmlElement.createEl('h3', { text: file.basename,cls: 'stammbaum-name' });
-			stElement.htmlElement.createEl('p', { text: `Date of Birth: ${relevantMetadata.dateOfBirth}`,cls: 'stammbaum-date-of-birth' });
-			stElement.htmlElement.createEl('p', { text: `Date of Death: ${relevantMetadata.dateOfDeath}`,cls: 'stammbaum-date-of-death' });
+			stElement.htmlElement.style.position = 'absolute';
+			stElement.htmlElement.style.left = `${40 + this.stammbaumElements.length * 220}px`;
+			stElement.htmlElement.style.top = `${40 + this.stammbaumElements.length * 140}px`;
+			stElement.htmlElement.style.touchAction = 'none';
+			stElement.htmlElement.createEl('h3', { text: file.basename, cls: 'stammbaum-name' }).addEventListener('click', (evt) => {
+				evt.preventDefault();
+				void this.app.workspace.openLinkText(file.basename, '', false);
+			});
+			stElement.htmlElement.createEl('p', { text: `${this.plugin.settings.birthSymbol} ${relevantMetadata.dateOfBirth}`,cls: 'stammbaum-date-of-birth' });
+			stElement.htmlElement.createEl('p', { text: `${this.plugin.settings.deathSymbol} ${relevantMetadata.dateOfDeath}`,cls: 'stammbaum-date-of-death' });
 			if(relevantMetadata?.parents) {
 				const stElParents = stElement.htmlElement.createEl('h4', { text: `Parents`,cls: 'stammbaum-parents' });
 				relevantMetadata.parents.forEach(parent => {
@@ -89,12 +103,44 @@ export class StammbaumView extends ItemView {
 				});
 			}
 			this.stammbaumElements.push(stElement);
+			
+			stElement.htmlElement.addEventListener('pointerdown', (ev) => {
+				if (!stElement.htmlElement) return;
+				ev.preventDefault();
+				const element = stElement.htmlElement;
+				const startRect = element.getBoundingClientRect();
+				const offsetX = ev.clientX - startRect.left;
+				const offsetY = ev.clientY - startRect.top;
+				element.classList.add('dragging');
+
+				const moveHandler = (moveEvent: PointerEvent) => {
+					const parentRect = stParent.getBoundingClientRect();
+					element.style.left = `${moveEvent.clientX - offsetX + stParent.scrollLeft - parentRect.left}px`;
+					element.style.top = `${moveEvent.clientY - offsetY +stParent.scrollTop - parentRect.top}px`;
+					stElement.connectors.forEach(connector => {
+						connector.moved();
+					});
+				};
+
+				const upHandler = () => {
+					element.classList.remove('dragging');
+					document.removeEventListener('pointermove', moveHandler);
+					document.removeEventListener('pointerup', upHandler);
+				};
+
+				document.addEventListener('pointermove', moveHandler);
+				document.addEventListener('pointerup', upHandler, { once: true });
+			});
 		}
 		// After all elements are created, connect parents and children
 		this.stammbaumElements.forEach(element => {
 			this.stammbaumElements.forEach(potParent => {
 				if (element.parents.includes(potParent.name)) {
-					if (element.htmlElement && potParent.htmlElement) new Connector({ ele1: element.htmlElement, ele2: potParent.htmlElement, lineStyle: '2px solid #fff', containerElement: stParent });
+					if (element.htmlElement && potParent.htmlElement) {
+						const connector = new Connector({ ele1: element.htmlElement, ele2: potParent.htmlElement, lineStyle: '2px solid #fff', containerElement: stParent });
+						element.connectors.push(connector);
+						potParent.connectors.push(connector);
+					}
 					console.debug(`Connecting ${element.name} and ${potParent.name}`);
 				}
 			});

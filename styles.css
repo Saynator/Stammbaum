@@ -11,6 +11,7 @@ If your plugin does not need CSS, delete this file.
 	flex-direction: column;
 	height: 100%;
 	border: 1px solid var(--background-modifier-border);
+	overflow: auto;
 }
 .stammbaum-element {
 	display: flex;
@@ -18,35 +19,58 @@ If your plugin does not need CSS, delete this file.
 	align-items: center;
 	margin: 10px;
 	background-color: brown;
+	position: absolute;
+	cursor: grab;
+	user-select: none;
+	min-width: 180px;
 }
 .stammbaum-parent {
 	display: flex;
 	flex-direction: row;
 	align-items: center;
 	margin: 10px;
+	position: relative;
+	min-height: 100%;
+	font-family: fantasy;
+	font-size: 1.1em;
+}
+.stammbaum-element.dragging {
+	cursor: grabbing;
+	z-index: 1001;
+	background-color: green;
 }
 .stammbaum-parents {
 	display: grid;
 	flex-direction: vertical;
 	align-items: center;
 	margin: 10px;
+	font-family: fantasy;
+	font-size: 1.1em;
 }
 .stammbaum-date-of-birth {
 	display: flex;
 	flex-direction: row;
 	align-items: center;
 	margin: 10px;
+	font-family: fantasy;
 }
 .stammbaum-date-of-death {
 	display: flex;
 	flex-direction: row;
 	align-items: center;
 	margin: 10px;
+	font-family: fantasy;
 }
 .stammbaum-name {
-	font-size: 1.2em;
+	font-size: 1.6em;
 	font-weight: bold;
-	margin-bottom: 5px;
+	margin: 15px;
+	font-family:Georgia, 'Times New Roman', Times, serif;
+	hover {
+		text-decoration: underline;
+		color: aliceblue;
+	}
+	
 }
 .stammbaum-canvas {
 	border: 1px solid var(--background-modifier-border);

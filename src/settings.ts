@@ -8,6 +8,8 @@ export interface StammbaumPluginSettings {
 	dateOfBirthProperty: string;
 	dateOfDeathProperty: string;
 	relationshipIndicator: string;
+	birthSymbol: string;
+	deathSymbol: string;
 }
 
 export const DEFAULT_SETTINGS: StammbaumPluginSettings = {
@@ -16,7 +18,9 @@ export const DEFAULT_SETTINGS: StammbaumPluginSettings = {
 	parentsProperty: 'Parents',
 	dateOfBirthProperty: 'Date of birth',
 	dateOfDeathProperty: 'Date of death',
-	relationshipIndicator: '# Relationships'
+	relationshipIndicator: '# Relationships',
+	birthSymbol: '*',
+	deathSymbol: '✝'
 }
 
 export class StammbaumPluginSettingsTabs extends PluginSettingTab {
@@ -104,6 +108,36 @@ export class StammbaumPluginSettingsTabs extends PluginSettingTab {
 				.setValue(this.plugin.settings.relationshipIndicator)
 				.onChange(async (value) => {
 					this.plugin.settings.relationshipIndicator = value;
+					await this.plugin.saveSettings();
+				}));
+
+		/*
+		//
+		//
+		// Custom Display Names Settings
+		//
+		//
+		*/
+		new Setting(containerEl).setHeading().setName('Custom display names');
+
+		new Setting(containerEl)
+			.setName('Birth symbol')
+			.setDesc('The birth symbol to use in the family tree display')
+			.addText(text => text
+				.setPlaceholder('*')
+				.setValue(this.plugin.settings.birthSymbol)
+				.onChange(async (value) => {
+					this.plugin.settings.birthSymbol = value;
+					await this.plugin.saveSettings();
+				}));
+		new Setting(containerEl)
+			.setName('Death symbol')
+			.setDesc('The death symbol to use in the family tree display')
+			.addText(text => text
+				.setPlaceholder('✝')
+				.setValue(this.plugin.settings.deathSymbol)
+				.onChange(async (value) => {
+					this.plugin.settings.deathSymbol = value;
 					await this.plugin.saveSettings();
 				}));
 	}

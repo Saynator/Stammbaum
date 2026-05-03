@@ -5,7 +5,7 @@ import { StammbaumView, VIEW_TYPE_STAMMBAUM } from 'stammbaumView';
 // Remember to rename these classes and interfaces!
 
 export default class StammbaumPlugin extends Plugin {
-	settings: StammbaumPluginSettings;
+	settings!: StammbaumPluginSettings;
 	
 	async onload() {
 		await this.loadSettings();

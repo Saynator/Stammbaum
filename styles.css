@@ -48,3 +48,7 @@ If your plugin does not need CSS, delete this file.
 	font-weight: bold;
 	margin-bottom: 5px;
 }
+.stammbaum-canvas {
+	border: 1px solid var(--background-modifier-border);
+	margin-top: 10px;
+}

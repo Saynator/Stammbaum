@@ -1,5 +1,6 @@
 import { TFile, Vault } from "obsidian";
 import {StammbaumPluginSettings} from "./settings";
+import { customDate } from "customDate";
 
 
 export async function getRelevantMetadata(file: TFile, vault: Vault, settings: StammbaumPluginSettings){
@@ -69,7 +70,7 @@ export async function getRelevantMetadata(file: TFile, vault: Vault, settings: S
 		// IN CONTENT
 		//TO BE IMPLEMENTED
 		console.debug(`Found date of birth ${dateOfBirth} and date of death ${dateOfDeath}`);
-		return {dateOfBirth: dateOfBirth,dateOfDeath: dateOfDeath,parents: parents};
+		return {dateOfBirth: new customDate(dateOfBirth),dateOfDeath: new customDate(dateOfDeath),parents: parents};
 	});
 	console.debug(relevant_metadata);
 	return relevant_metadata;

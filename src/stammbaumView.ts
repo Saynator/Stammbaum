@@ -3,18 +3,19 @@ import StammbaumPlugin from 'main';
 import { getRelevantMetadata } from 'metadata';
 import { ItemView, WorkspaceLeaf } from 'obsidian';
 import { Connector } from 'connector';
+import { customDate } from 'customDate';
 
-class StammbaumElement{
+export class StammbaumElement{
 	name: string
-	dateOfBirth: string
-	dateOfDeath: string
+	dateOfBirth: customDate
+	dateOfDeath: customDate
 	parents: string[]
 	htmlElement?: HTMLElement;
 	connectors: Connector[] = [];
-	constructor(name: string, dateOfBirth: string, dateOfDeath: string) {
+	constructor(name: string, dateOfBirth: string | customDate, dateOfDeath: string | customDate) {
 		this.name = name;
-		this.dateOfBirth = dateOfBirth;
-		this.dateOfDeath = dateOfDeath;
+		this.dateOfBirth = dateOfBirth instanceof customDate ? dateOfBirth : new customDate(dateOfBirth);
+		this.dateOfDeath = dateOfDeath instanceof customDate ? dateOfDeath : new customDate(dateOfDeath);
 		this.parents = [];
 	}
 }
@@ -54,10 +55,13 @@ export class StammbaumView extends ItemView {
 		);
 		fileMetadata.sort((a, b) => { // Sort by date of birth
 			if (!a || !b) return 0;
-			const dateA = a.relevantMetadata?.dateOfBirth ? new Date(a.relevantMetadata.dateOfBirth): 0;
-			const dateB = b.relevantMetadata?.dateOfBirth ? new Date(b.relevantMetadata.dateOfBirth): 0;
+			const dateA = a.relevantMetadata?.dateOfBirth ? a.relevantMetadata.dateOfBirth: new customDate(0);
+			const dateB = b.relevantMetadata?.dateOfBirth ? b.relevantMetadata.dateOfBirth: new customDate(0);
 			return dateA < dateB ? -1 : dateA > dateB ? 1 : 0;
 		});
+		const oldest = fileMetadata[0] ? fileMetadata[0].relevantMetadata.dateOfBirth : new customDate(0);
+		const youngest = fileMetadata[-1] ? fileMetadata[-1].relevantMetadata.dateOfBirth : new customDate(0);
+		let col = 0;
 		for (const fileMeta of fileMetadata) {
 			const file = fileMeta?.file;
 			const relevantMetadata = fileMeta?.relevantMetadata;
@@ -66,13 +70,18 @@ export class StammbaumView extends ItemView {
 			}
 			const stElement = new StammbaumElement(
 				file.basename,
-				relevantMetadata.dateOfBirth ?? '',
-				relevantMetadata.dateOfDeath ?? ''
+				relevantMetadata.dateOfBirth ?? new customDate(0),
+				relevantMetadata.dateOfDeath ?? new customDate(0)
 			);
+
+			//Calculate row
+			
+			const row = youngest && oldest ? (stElement.dateOfBirth + youngest)/oldest: 0.5;
+
 			stElement.htmlElement = stParent.createEl('div', { cls: 'stammbaum-element' });
 			stElement.htmlElement.style.position = 'absolute';
-			stElement.htmlElement.style.left = `${40 + this.stammbaumElements.length * 220}px`;
-			stElement.htmlElement.style.top = `${40 + this.stammbaumElements.length * 140}px`;
+			stElement.htmlElement.style.left = `${40 * 220 + col}px`;
+			stElement.htmlElement.style.top = `${40 + Number(stParent.getBoundingClientRect().height/row) * 140}px`;
 			stElement.htmlElement.style.touchAction = 'none';
 			stElement.htmlElement.createEl('h3', { text: file.basename, cls: 'stammbaum-name' }).addEventListener('click', (evt) => {
 				evt.preventDefault();
@@ -131,6 +140,7 @@ export class StammbaumView extends ItemView {
 				document.addEventListener('pointermove', moveHandler);
 				document.addEventListener('pointerup', upHandler, { once: true });
 			});
+			col+=stElement.htmlElement?.getBoundingClientRect().width || 0;
 		}
 		// After all elements are created, connect parents and children
 		this.stammbaumElements.forEach(element => {

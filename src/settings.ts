@@ -10,6 +10,8 @@ export interface StammbaumPluginSettings {
 	relationshipIndicator: string;
 	birthSymbol: string;
 	deathSymbol: string;
+	datePattern: string;
+	dateGroupPriority: string;
 }
 
 export const DEFAULT_SETTINGS: StammbaumPluginSettings = {
@@ -20,12 +22,13 @@ export const DEFAULT_SETTINGS: StammbaumPluginSettings = {
 	dateOfDeathProperty: 'Date of death',
 	relationshipIndicator: '# Relationships',
 	birthSymbol: '*',
-	deathSymbol: '✝'
+	deathSymbol: '✝',
+	datePattern: '?<year>-?[0-9]*)-(?<month>-?[0-9]*)-(?<day>-?[0-9]*)',
+	dateGroupPriority: 'year,month,day'
 }
 
 export class StammbaumPluginSettingsTabs extends PluginSettingTab {
 	plugin: StammbaumPlugin;
-
 	constructor(app: App, plugin: StammbaumPlugin) {
 		super(app, plugin);
 		this.plugin = plugin;
@@ -140,5 +143,35 @@ export class StammbaumPluginSettingsTabs extends PluginSettingTab {
 					this.plugin.settings.deathSymbol = value;
 					await this.plugin.saveSettings();
 				}));
+				/*
+		//
+		//
+		// Custom Date Settings
+		//
+		//
+		*/
+		new Setting(containerEl).setHeading().setName('Custom date settings');
+
+		new Setting(containerEl)
+			.setName('Custom date pattern')
+			.setDesc('The regex to use when parsing custom dates')
+			.addText(text => text
+				.setPlaceholder('(?<year>-?[0-9]*)-(?<month>-?[0-9]*)-(?<day>-?[0-9]*)')
+				.setValue(this.plugin.settings.datePattern)
+				.onChange(async (value) => {
+					this.plugin.settings.datePattern = value;
+					await this.plugin.saveSettings();
+				}));
+		new Setting(containerEl)
+			.setName('Date group priority')
+			.setDesc('The priority of the groups in the custom date pattern (comma separated)')
+			.addText(text => text
+				.setPlaceholder('Year, month, day')
+				.setValue(this.plugin.settings.dateGroupPriority)
+				.onChange(async (value) => {
+					this.plugin.settings.dateGroupPriority = value;
+					await this.plugin.saveSettings();
+				}));
+
 	}
 }

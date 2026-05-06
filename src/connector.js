@@ -12,17 +12,17 @@ Whatever you use for drag control, call moved(e, ele) per increment of movement,
 SOURCE: https://codepen.io/JEE42
 */
 
-export var Connector = function (params) {
+export const Connector = function (params) {
     if (typeof (params) == "undefined") { return false }; // If no params then abandon.
     // Process input params.
-    var ele1 = params.ele1 || '';   // First element to link
-    var ele2 = params.ele2 || '';   // Second element to link
+    let ele1 = params.child || '';   // First element to link
+    let ele2 = params.parent || '';   // Second element to link
     if (!ele1 || !ele2) { return false }; // If not two elements then abandon. 
-    var containerElement = params.containerElement || document.body; // element to which the line div will be appended - default to body.
+    let containerElement = params.containerElement || document.body; // element to which the line div will be appended - default to body.
     this.containerElement = containerElement;
-    var className = params.class || 'muConnector'
+    let className = params.class || 'muConnector'
 
-    var lineStyle = params.lineStyle || '1px solid #666666';   // CSS style for connector line.
+    let lineStyle = params.lineStyle || '1px solid #666666';   // CSS style for connector line.
     this.lineStyle = lineStyle;
 
     this.gapX1 = params.gapX1 || 0;  // First element gap before start of connector, etc
@@ -39,7 +39,7 @@ export var Connector = function (params) {
         this.gapY2 = this.gap
     }
 
-    var pos = function () { // only used for standalone drag processing.
+    let pos = function () { // only used for standalone drag processing.
         this.left = 0;
         this.top = 0;
     }
@@ -47,13 +47,13 @@ export var Connector = function (params) {
     this.PseudoGuid = new (function () { // Make a GUID to use in unique id assignment - from and credit to http://stackoverflow.com/questions/226689/unique-element-id-even-if-element-doesnt-have-one
         this.empty = "00000000-0000-0000-0000-000000000000";
         this.GetNew = function () {
-            var fC = function () { return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1).toUpperCase(); }
+            let fC = function () { return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1).toUpperCase(); }
             return (fC() + fC() + "-" + fC() + "-" + fC() + "-" + fC() + "-" + fC() + fC() + fC());
         };
     })();
 
     this.id = this.PseudoGuid.GetNew(); // use guid to avoid id-clashes with manual code.
-    var resolveElement = function (value) {
+    let resolveElement = function (value) {
         if (!value) { return null; }
         if (value.nodeType === 1) { return value; }
         if (typeof value === 'string') { return document.getElementById(value); }
@@ -93,25 +93,25 @@ Also can accommodate a gap between edge of element and start of line.
 */
 Connector.prototype.link = function link() {
 
-    var originRect = this.ele1.getBoundingClientRect();
-    var targetRect = this.ele2.getBoundingClientRect();
-    var containerRect = this.containerElement.getBoundingClientRect();
-    var containerLeft = containerRect.left + this.containerElement.clientLeft;
-    var containerTop = containerRect.top + this.containerElement.clientTop;
+    let originRect = this.ele1.getBoundingClientRect();
+    let targetRect = this.ele2.getBoundingClientRect();
+    let containerRect = this.containerElement.getBoundingClientRect();
+    let containerLeft = containerRect.left + this.containerElement.clientLeft;
+    let containerTop = containerRect.top + this.containerElement.clientTop;
 
-    var originX = originRect.left + originRect.width / 2 - containerLeft + this.containerElement.scrollLeft;
-    var originY = originRect.top + originRect.height / 2 - containerTop + this.containerElement.scrollTop;
+    let originX = originRect.left + originRect.width / 2 - containerLeft + this.containerElement.scrollLeft;
+    let originY = originRect.top + originRect.height / 2 - containerTop + this.containerElement.scrollTop;
 
-    var targetX = targetRect.left + targetRect.width / 2 - containerLeft + this.containerElement.scrollLeft;
-    var targetY = targetRect.top + targetRect.height / 2 - containerTop + this.containerElement.scrollTop;
+    let targetX = targetRect.left + targetRect.width / 2 - containerLeft + this.containerElement.scrollLeft;
+    let targetY = targetRect.top + targetRect.height / 2 - containerTop + this.containerElement.scrollTop;
 
-    var l = this.hyp((targetX - originX), (targetY - originY));
-    var angle = 180 / 3.1415 * Math.acos((targetY - originY) / l);
+    let l = this.hyp((targetX - originX), (targetY - originY));
+    let angle = 180 / 3.1415 * Math.acos((targetY - originY) / l);
     if (targetX > originX) { angle = angle * -1 }
 
     // Compute adjustments to edge of element plus gaps.
-    var adj1 = this.edgeAdjust(angle, this.gapX1 + originRect.width / 2, this.gapY1 + originRect.height / 2)
-    var adj2 = this.edgeAdjust(angle, this.gapX2 + targetRect.width / 2, this.gapY2 + targetRect.height / 2)
+    let adj1 = this.edgeAdjust(angle, this.gapX1 + originRect.width / 2, this.gapY1 + originRect.height / 2)
+    let adj2 = this.edgeAdjust(angle, this.gapX2 + targetRect.width / 2, this.gapY2 + targetRect.height / 2)
 
     l = l - (adj1.hp + adj2.hp)
 
@@ -125,15 +125,15 @@ Connector.prototype.link = function link() {
 }
 
 Connector.prototype.Round = function (value, places) {
-    var multiplier = Math.pow(10, places);
+    let multiplier = Math.pow(10, places);
     return (Math.round(value * multiplier) / multiplier);
 }
 
 Connector.prototype.edgeAdjust = function (a, w1, h1) {
-    var w = 0, h = 0
+    let w = 0, h = 0
 
     // compute corner angles
-    var ca = []
+    let ca = []
     ca[0] = Math.atan(w1 / h1) * 180 / 3.1415926 // RADIANS !!!
     ca[1] = 180 - ca[0]
     ca[2] = ca[0] + 180
@@ -175,7 +175,7 @@ Connector.prototype.edgeAdjust = function (a, w1, h1) {
     }
 
     // We now have the width and height offsets - compute the hypotenuse.
-    var hp = this.hyp(w, h)
+    let hp = this.hyp(w, h)
 
     return { hp: hp }
 }

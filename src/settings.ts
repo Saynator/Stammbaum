@@ -12,6 +12,7 @@ export interface StammbaumPluginSettings {
 	deathSymbol: string;
 	datePattern: string;
 	dateGroupPriority: string;
+	dateGroupWeights: string;
 }
 
 export const DEFAULT_SETTINGS: StammbaumPluginSettings = {
@@ -23,8 +24,9 @@ export const DEFAULT_SETTINGS: StammbaumPluginSettings = {
 	relationshipIndicator: '# Relationships',
 	birthSymbol: '*',
 	deathSymbol: '✝',
-	datePattern: '?<year>-?[0-9]*)-(?<month>-?[0-9]*)-(?<day>-?[0-9]*)',
-	dateGroupPriority: 'year,month,day'
+	datePattern: '(?<year>-?[0-9]*)-(?<month>-?[0-9]*)-(?<day>-?[0-9]*)',
+	dateGroupPriority: 'year,month,day',
+	dateGroupWeights: '365,30,1'
 }
 
 export class StammbaumPluginSettingsTabs extends PluginSettingTab {
@@ -170,6 +172,16 @@ export class StammbaumPluginSettingsTabs extends PluginSettingTab {
 				.setValue(this.plugin.settings.dateGroupPriority)
 				.onChange(async (value) => {
 					this.plugin.settings.dateGroupPriority = value;
+					await this.plugin.saveSettings();
+				}));
+		new Setting(containerEl)
+			.setName('Date group weights')
+			.setDesc('The weights of the groups in the custom date pattern (comma separated, corresponding to the group priority)')
+			.addText(text => text
+				.setPlaceholder('365,30,1')
+				.setValue(this.plugin.settings.dateGroupWeights)
+				.onChange(async (value) => {
+					this.plugin.settings.dateGroupWeights = value;
 					await this.plugin.saveSettings();
 				}));
 

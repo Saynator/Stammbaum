@@ -4,6 +4,7 @@ import { getRelevantMetadata } from 'metadata';
 import { ItemView, WorkspaceLeaf } from 'obsidian';
 import { Connector } from 'connector';
 import { customDate } from 'customDate';
+import { StammbaumPluginSettings } from 'settings';
 
 export class StammbaumElement{
 	name: string
@@ -12,10 +13,10 @@ export class StammbaumElement{
 	parents: string[]
 	htmlElement?: HTMLElement;
 	connectors: Connector[] = [];
-	constructor(name: string, dateOfBirth: string | customDate, dateOfDeath: string | customDate) {
+	constructor(name: string, dateOfBirth: string | customDate, dateOfDeath: string | customDate, settings: StammbaumPluginSettings) {
 		this.name = name;
-		this.dateOfBirth = dateOfBirth instanceof customDate ? dateOfBirth : new customDate(dateOfBirth);
-		this.dateOfDeath = dateOfDeath instanceof customDate ? dateOfDeath : new customDate(dateOfDeath);
+		this.dateOfBirth = dateOfBirth instanceof customDate ? dateOfBirth : new customDate(dateOfBirth,settings);
+		this.dateOfDeath = dateOfDeath instanceof customDate ? dateOfDeath : new customDate(dateOfDeath,settings);
 		this.parents = [];
 	}
 }
@@ -55,12 +56,12 @@ export class StammbaumView extends ItemView {
 		);
 		fileMetadata.sort((a, b) => { // Sort by date of birth
 			if (!a || !b) return 0;
-			const dateA = a.relevantMetadata?.dateOfBirth ? a.relevantMetadata.dateOfBirth: new customDate(0);
-			const dateB = b.relevantMetadata?.dateOfBirth ? b.relevantMetadata.dateOfBirth: new customDate(0);
-			return dateA < dateB ? -1 : dateA > dateB ? 1 : 0;
+			const dateA = a.relevantMetadata?.dateOfBirth ? a.relevantMetadata.dateOfBirth: new customDate(0,this.plugin.settings);
+			const dateB = b.relevantMetadata?.dateOfBirth ? b.relevantMetadata.dateOfBirth: new customDate(0,this.plugin.settings);
+			return dateA.getValue() < dateB.getValue() ? -1 : dateA.getValue() > dateB.getValue() ? 1 : 0;
 		});
-		const oldest = fileMetadata[0] ? fileMetadata[0].relevantMetadata.dateOfBirth : new customDate(0);
-		const youngest = fileMetadata[-1] ? fileMetadata[-1].relevantMetadata.dateOfBirth : new customDate(0);
+		const oldest = fileMetadata[0] ? fileMetadata[0].relevantMetadata.dateOfBirth.getValue() : 0;
+		const youngest = fileMetadata[-1] ? fileMetadata[-1].relevantMetadata.dateOfBirth.getValue() : 0;
 		let col = 0;
 		for (const fileMeta of fileMetadata) {
 			const file = fileMeta?.file;
@@ -70,19 +71,22 @@ export class StammbaumView extends ItemView {
 			}
 			const stElement = new StammbaumElement(
 				file.basename,
-				relevantMetadata.dateOfBirth ?? new customDate(0),
-				relevantMetadata.dateOfDeath ?? new customDate(0)
+				relevantMetadata.dateOfBirth ?? new customDate(0,this.plugin.settings),
+				relevantMetadata.dateOfDeath ?? new customDate(0,this.plugin.settings),
+				this.plugin.settings
 			);
 
 			//Calculate row
-			
-			const row = youngest && oldest ? (stElement.dateOfBirth + youngest)/oldest: 0.5;
+			const row = youngest && oldest && youngest != oldest ? (stElement.dateOfBirth.getValue() - youngest)/(oldest-youngest): 0.5;
 
 			stElement.htmlElement = stParent.createEl('div', { cls: 'stammbaum-element' });
-			stElement.htmlElement.style.position = 'absolute';
-			stElement.htmlElement.style.left = `${40 * 220 + col}px`;
-			stElement.htmlElement.style.top = `${40 + Number(stParent.getBoundingClientRect().height/row) * 140}px`;
-			stElement.htmlElement.style.touchAction = 'none';
+			stElement.htmlElement.setCssProps({
+				position: 'absolute',
+				left: `${1.1*col}px`,
+				top: `${/*Number(stParent.getBoundingClientRect().height/row) * */ 100+row+/*stElement.htmlElement.getBoundingClientRect().height/2*/ + 10}px`,
+				'touch-action': 'none'
+			});
+			
 			stElement.htmlElement.createEl('h3', { text: file.basename, cls: 'stammbaum-name' }).addEventListener('click', (evt) => {
 				evt.preventDefault();
 				void this.app.workspace.openLinkText(file.basename, '', false);
@@ -147,7 +151,7 @@ export class StammbaumView extends ItemView {
 			this.stammbaumElements.forEach(potParent => {
 				if (element.parents.includes(potParent.name)) {
 					if (element.htmlElement && potParent.htmlElement) {
-						const connector = new Connector({ ele1: element.htmlElement, ele2: potParent.htmlElement, lineStyle: '2px solid #fff', containerElement: stParent });
+						const connector = new Connector({ child: element.htmlElement, parent: potParent.htmlElement, lineStyle: '2px solid #fff', containerElement: stParent });
 						element.connectors.push(connector);
 						potParent.connectors.push(connector);
 					}
@@ -157,23 +161,4 @@ export class StammbaumView extends ItemView {
 		});
 	}
 	async onClose() {}
-}
-
-function connectStammbaumElements(element1: HTMLElement, element2: HTMLElement) {
-	const startRect = element1.getBoundingClientRect();
-	const endRect = element2.getBoundingClientRect();
-	
-	// Calculate center points of each element
-	const startX = startRect.left + startRect.width / 2 + window.scrollX;
-	const startY = startRect.top + startRect.height / 2 + window.scrollY;
-	const endX = endRect.left + endRect.width / 2 + window.scrollX;
-	const endY = endRect.top + endRect.height / 2 + window.scrollY;
-	const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-	line.setAttribute('x1', startX.toString());
-	line.setAttribute('y1', startY.toString());
-	line.setAttribute('x2', endX.toString());
-	line.setAttribute('y2', endY.toString());
-	line.setAttribute('stroke', 'green');
-	line.setAttribute('stroke-width', '2');
-	document.body.appendChild(line);
 }

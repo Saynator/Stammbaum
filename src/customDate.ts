@@ -1,12 +1,34 @@
 import { DEFAULT_SETTINGS, StammbaumPluginSettings } from "settings";
 
+interface customDateType {
+	// The display name of the date type
+	name: string
+	
+	// @property
+	// Context Sensitive Grammar
+	//
+	// The order of the tokens in this array determines the hierarchy.
+	// Example: "Hour",24 - Simple representation of hours, as they are consistently 24 per day.
+	// 			"Day",[{interval: 1,value: 31},{interval: 1,value: 30},{interval: 12,value: 28,offset: 1},{interval: 48,value: 29,offset: 1},{interval: 4800,value: 28,offset: 1},{interval:19200,value:29,offset:1}] - Complex representation of days per larger unit (aka months).
+	// The highest interval is binding per default, if you want to change that use the bindingHierarchy property.
+	// To enforce the ranges when interpreting a number set the forceRanges parameter in the parse method.
+	tokens : Array<{
+		name: string, // The display name of the token
+		range: number | {interval: number, 
+			value: number,
+			bindingHierarchy?: number,
+			offset?: number}[],
+		representation?: string
+	}>;
+	};
+
 export class customDate {
+	
+	public static dateTypes = Array<customDateType>();
+
 	settings!: StammbaumPluginSettings;
 	dateTime: number;
 	dateString: string;
-	pattern: RegExp;
-	groupPriority: string[];
-	groupWeight: Map<string,number>
 
 	constructor(dateString: string, settings: StammbaumPluginSettings);
 	constructor(date: Date, settings: StammbaumPluginSettings);
@@ -45,10 +67,13 @@ export class customDate {
 	getValue() : number{
 		return this.dateTime ? this.dateTime : this.parseCustomStringValue(this.dateString); //TODO
 	}
+	static compare(date1 : customDate, date2 : customDate){
+		return false;
+	}
 	[Symbol.toPrimitive](hint: string): string | number {
 		return hint === 'string' ? this.toString() : this.getValue();
 	}
-	parseCustomStringValue(dateString: string) : number {
+	parseCustomStringValue(dateString: string, forceRanges = false) : number {
 		return 0;
 		const match = dateString.match(this.pattern);
 		if (!match || match === undefined) {

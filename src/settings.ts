@@ -14,7 +14,7 @@ export interface StammbaumPluginSettings {
 	dateGroupPriority: string;
 	dateGroupWeights: string;
 }
-
+export let ST_SETTINGS: StammbaumPluginSettings;
 export const DEFAULT_SETTINGS: StammbaumPluginSettings = {
 	stammbaumSetting: 'default',
 	namelistLocation: 'Namensliste.md',
@@ -38,6 +38,7 @@ export class StammbaumPluginSettingsTabs extends PluginSettingTab {
 	async loadSettings() {
 		const data = (await this.plugin.loadData()) as Partial<StammbaumPluginSettings> | undefined;
 		this.plugin.settings = Object.assign({}, DEFAULT_SETTINGS, data ?? {});
+		ST_SETTINGS = Object.assign({}, DEFAULT_SETTINGS, data ?? {});;
 	}
 	display(): void {
 		const {containerEl} = this;

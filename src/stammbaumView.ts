@@ -13,11 +13,13 @@ export class StammbaumElement{
 	parents: string[]
 	htmlElement?: HTMLElement;
 	connectors: Connector[] = [];
+	hierarchyLevel?: number;
 	constructor(name: string, dateOfBirth: string | customDate, dateOfDeath: string | customDate, settings: StammbaumPluginSettings) {
 		this.name = name;
 		this.dateOfBirth = dateOfBirth instanceof customDate ? dateOfBirth : new customDate(dateOfBirth,settings);
 		this.dateOfDeath = dateOfDeath instanceof customDate ? dateOfDeath : new customDate(dateOfDeath,settings);
 		this.parents = [];
+		this.hierarchyLevel = 0;
 	}
 }
 
@@ -54,6 +56,7 @@ export class StammbaumView extends ItemView {
 				return {file, relevantMetadata};
 			})
 		);
+		fileMetadata.filter((data => data != undefined));
 		fileMetadata.sort((a, b) => { // Sort by date of birth
 			if (!a || !b) return 0;
 			const dateA = a.relevantMetadata?.dateOfBirth ? a.relevantMetadata.dateOfBirth: new customDate(0,this.plugin.settings);
@@ -61,7 +64,7 @@ export class StammbaumView extends ItemView {
 			return dateA.getValue() < dateB.getValue() ? -1 : dateA.getValue() > dateB.getValue() ? 1 : 0;
 		});
 		const oldest = fileMetadata[0] ? fileMetadata[0].relevantMetadata.dateOfBirth.getValue() : 0;
-		const youngest = fileMetadata[-1] ? fileMetadata[-1].relevantMetadata.dateOfBirth.getValue() : 0;
+		const youngest = fileMetadata[fileMetadata.length-1] ? fileMetadata[fileMetadata.length - 1].relevantMetadata.dateOfBirth.getValue() : 0;
 		let col = 0;
 		for (const fileMeta of fileMetadata) {
 			const file = fileMeta?.file;

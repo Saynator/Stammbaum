@@ -13,8 +13,8 @@ export interface StammbaumPluginSettings {
 	datePattern: string;
 	dateGroupPriority: string;
 	dateGroupWeights: string;
-	tickableFiles: TFile[];
-	tickedFiles: TFile[];
+	tickableFiles: string;
+	tickedFiles: string;
 }
 export let ST_SETTINGS: StammbaumPluginSettings;
 export const DEFAULT_SETTINGS: StammbaumPluginSettings = {
@@ -29,8 +29,8 @@ export const DEFAULT_SETTINGS: StammbaumPluginSettings = {
 	datePattern: '(?<year>-?[0-9]*)-(?<month>-?[0-9]*)-(?<day>-?[0-9]*)',
 	dateGroupPriority: 'year,month,day',
 	dateGroupWeights: '365,30,1',
-	tickableFiles: [],
-	tickedFiles: [],
+	tickableFiles: "",
+	tickedFiles: "",
 }
 
 export class StammbaumPluginSettingsTabs extends PluginSettingTab {

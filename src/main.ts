@@ -1,4 +1,4 @@
-import {App, Editor, MarkdownEditView, MarkdownView, Modal, normalizePath, Notice, Plugin, TFile, WorkspaceLeaf, WorkspaceSplit, WorkspaceTabs} from 'obsidian';
+import {App, Editor, MarkdownView, Modal, normalizePath, Notice, Plugin, TFile, WorkspaceLeaf} from 'obsidian';
 import {DEFAULT_SETTINGS, StammbaumPluginSettings, StammbaumPluginSettingsTabs} from "./settings";
 import { getRelevantMetadata } from 'metadata';
 import { StammbaumView, VIEW_TYPE_STAMMBAUM } from 'stammbaumView';
@@ -10,22 +10,12 @@ export default class StammbaumPlugin extends Plugin {
 	async onload() {
 		await this.loadSettings();
 
-		// This creates an icon in the left ribbon.
-
-		// This adds a simple command that can be triggered anywhere
-		this.addCommand({
-			id: 'open-modal-simple',
-			name: 'Open modal (simple)',
-			callback: () => {
-				new StammbaumModal(this.app).open();
-			}
-		});
 		this.addCommand({
 			id: 'untick-all',
 			name: 'Untick all ticking notes',
 			callback: () => {
 				this.app.vault.getMarkdownFiles().forEach(file => {
-					if(this.settings.tickableFiles.contains(file)){ this.settings.tickedFiles.remove(file);
+					if(this.settings.tickableFiles.contains(file.path)){ this.settings.tickedFiles = this.settings.tickedFiles.split('|').filter(f => f !== file.path).join('|');
 					console.debug(`Unticked ${file.basename}`);}
 				});
 				this.saveData(this.settings).catch(e => {console.error(e)});
@@ -42,15 +32,15 @@ export default class StammbaumPlugin extends Plugin {
 			id: 'open-unticked-files',
 			name: 'Open all unticked files',
 			callback: async () => {
-				const untickedFiles = this.settings.tickableFiles.filter(file => {
-					return !this.settings.tickedFiles.contains(file);
+				const untickedFiles = this.settings.tickableFiles.split('|').filter(file => {
+					return !this.settings.tickedFiles.split('|').contains(file);
 				}); // Filter out all files that were already ticked
-				console.debug("Opening files: " + untickedFiles.map(file =>{return file.basename}).join(','));
+				console.debug("Opening files: " + untickedFiles.map(file =>{return file}).join('|'));
 				await this.app.workspace.getLeaf("split").setViewState({
 					type: "base",
 					active: true
 				});
-				for (const file of untickedFiles) {
+				for (const filepath of untickedFiles) {
 
 					const leaf = this.app.workspace.getLeaf(true);
 
@@ -59,6 +49,11 @@ export default class StammbaumPlugin extends Plugin {
 						type: "markdown",
 						active: false
 					});
+					const file = this.app.vault.getFileByPath(normalizePath(filepath));
+					if (!file) {
+						console.error(`File at ${filepath} not found in vault.`);
+						continue;
+					}
 					leaf.openFile(file).catch(e => {console.error(`Failed to open file ${file.basename}: ${e}`)});
 					leaf.setGroup('unticked');
 				}
@@ -137,12 +132,17 @@ export default class StammbaumPlugin extends Plugin {
 			// Called when the user  the icon.
 			await this.openStammbaumView();
 		});
-
+		const tickButton = this.addStatusBarItem().createEl('button', {text:"Tick",cls:"tick-button"});
+		tickButton.onclick = () => {
+			const file =this.app.workspace.getActiveFile();
+			if (!file) return;
+			this.tickFile(file);
+		};
 	}
 	tickFile(file: TFile | null){
 		if(!(file instanceof TFile)) {console.error(`Could not tick file ${file}. Appears to not be a valid TFile object`);return;}
-		this.settings.tickedFiles.push(file);
-		if(!this.settings.tickableFiles.contains(file)) this.settings.tickableFiles.push(file);
+		if(!this.settings.tickedFiles.contains('|' + file.path + '|')) this.settings.tickedFiles = this.settings.tickedFiles.concat('|' + file.path + '|');
+		if(!this.settings.tickableFiles.contains('|' + file.path + '|')) this.settings.tickableFiles = this.settings.tickableFiles.concat('|' + file.path + '|');
 		console.debug(file);
 		this.saveData(this.settings).catch(e => {console.error(e)});
 	}

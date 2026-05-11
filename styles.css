@@ -76,3 +76,6 @@ If your plugin does not need CSS, delete this file.
 	border: 1px solid var(--background-modifier-border);
 	margin-top: 10px;
 }
+.tick-button {
+	font-family: 'Courier New', Courier, monospace;
+}

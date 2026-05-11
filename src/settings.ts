@@ -1,4 +1,4 @@
-import {App, PluginSettingTab, Setting} from "obsidian";
+import {App, PluginSettingTab, Setting, TFile} from "obsidian";
 import StammbaumPlugin from "./main";
 
 export interface StammbaumPluginSettings {
@@ -13,6 +13,8 @@ export interface StammbaumPluginSettings {
 	datePattern: string;
 	dateGroupPriority: string;
 	dateGroupWeights: string;
+	tickableFiles: TFile[];
+	tickedFiles: TFile[];
 }
 export let ST_SETTINGS: StammbaumPluginSettings;
 export const DEFAULT_SETTINGS: StammbaumPluginSettings = {
@@ -26,7 +28,9 @@ export const DEFAULT_SETTINGS: StammbaumPluginSettings = {
 	deathSymbol: '✝',
 	datePattern: '(?<year>-?[0-9]*)-(?<month>-?[0-9]*)-(?<day>-?[0-9]*)',
 	dateGroupPriority: 'year,month,day',
-	dateGroupWeights: '365,30,1'
+	dateGroupWeights: '365,30,1',
+	tickableFiles: [],
+	tickedFiles: [],
 }
 
 export class StammbaumPluginSettingsTabs extends PluginSettingTab {

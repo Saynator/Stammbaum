@@ -1,4 +1,4 @@
-import {App, Editor, MarkdownView, Modal, normalizePath, Notice, Plugin, WorkspaceLeaf} from 'obsidian';
+import {App, Editor, MarkdownEditView, MarkdownView, Modal, normalizePath, Notice, Plugin, TFile, WorkspaceLeaf, WorkspaceSplit, WorkspaceTabs} from 'obsidian';
 import {DEFAULT_SETTINGS, StammbaumPluginSettings, StammbaumPluginSettingsTabs} from "./settings";
 import { getRelevantMetadata } from 'metadata';
 import { StammbaumView, VIEW_TYPE_STAMMBAUM } from 'stammbaumView';
@@ -20,6 +20,50 @@ export default class StammbaumPlugin extends Plugin {
 				new StammbaumModal(this.app).open();
 			}
 		});
+		this.addCommand({
+			id: 'untick-all',
+			name: 'Untick all ticking notes',
+			callback: () => {
+				this.app.vault.getMarkdownFiles().forEach(file => {
+					if(this.settings.tickableFiles.contains(file)){ this.settings.tickedFiles.remove(file);
+					console.debug(`Unticked ${file.basename}`);}
+				});
+				this.saveData(this.settings).catch(e => {console.error(e)});
+			}
+		});
+		this.addCommand({
+			id: 'tick-this',
+			name: 'Tick this file',
+			callback: () => {
+				this.tickFile(this.app.workspace.getActiveFile());
+			}
+		});
+		this.addCommand({
+			id: 'open-unticked-files',
+			name: 'Open all unticked files',
+			callback: async () => {
+				const untickedFiles = this.settings.tickableFiles.filter(file => {
+					return !this.settings.tickedFiles.contains(file);
+				}); // Filter out all files that were already ticked
+				console.debug("Opening files: " + untickedFiles.map(file =>{return file.basename}).join(','));
+				await this.app.workspace.getLeaf("split").setViewState({
+					type: "base",
+					active: true
+				});
+				for (const file of untickedFiles) {
+
+					const leaf = this.app.workspace.getLeaf(true);
+
+					if (!leaf) continue;
+					await leaf.setViewState({
+						type: "markdown",
+						active: false
+					});
+					leaf.openFile(file).catch(e => {console.error(`Failed to open file ${file.basename}: ${e}`)});
+					leaf.setGroup('unticked');
+				}
+			}
+		})
 		// This adds an editor command that can perform some operation on the current editor instance
 		this.addCommand({
 			id: 'add-to-tree',
@@ -32,7 +76,7 @@ export default class StammbaumPlugin extends Plugin {
 					return;
 				}
 				getRelevantMetadata(currentFile, this.app.vault,this.settings).then(metadata => {
-					new Notice(`Parents: ${metadata?.parents.join(', ')}, Date of Birth: ${metadata?.dateOfBirth}, Date of Death: ${metadata?.dateOfDeath}`);
+					new Notice(`Parents: ${metadata?.parents.join(', ')}, Date of Birth: ${metadata?.dateOfBirth.dateString}, Date of Death: ${metadata?.dateOfDeath.dateString}`);
 				}).catch(err => {
 					console.error(err);
 				});
@@ -94,6 +138,13 @@ export default class StammbaumPlugin extends Plugin {
 			await this.openStammbaumView();
 		});
 
+	}
+	tickFile(file: TFile | null){
+		if(!(file instanceof TFile)) {console.error(`Could not tick file ${file}. Appears to not be a valid TFile object`);return;}
+		this.settings.tickedFiles.push(file);
+		if(!this.settings.tickableFiles.contains(file)) this.settings.tickableFiles.push(file);
+		console.debug(file);
+		this.saveData(this.settings).catch(e => {console.error(e)});
 	}
 	async openStammbaumView() {
 		const {workspace} = this.app;

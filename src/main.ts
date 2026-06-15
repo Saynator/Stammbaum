@@ -1,4 +1,4 @@
-import {App, Editor, MarkdownView, Modal, normalizePath, Notice, Plugin, TFile, WorkspaceLeaf} from 'obsidian';
+import {App, Editor, MarkdownEditView, MarkdownView, Modal, normalizePath, Notice, Plugin, TFile, WorkspaceLeaf} from 'obsidian';
 import {DEFAULT_SETTINGS, StammbaumPluginSettings, StammbaumPluginSettingsTabs} from "./settings";
 import { getRelevantMetadata } from 'metadata';
 import { StammbaumView, VIEW_TYPE_STAMMBAUM } from 'stammbaumView';
@@ -24,7 +24,7 @@ export default class StammbaumPlugin extends Plugin {
 		this.addCommand({
 			id: 'tick-this',
 			name: 'Tick this file',
-			callback: () => {
+			editorCallback: () => {
 				this.tickFile(this.app.workspace.getActiveFile());
 			}
 		});
@@ -132,20 +132,36 @@ export default class StammbaumPlugin extends Plugin {
 			// Called when the user  the icon.
 			await this.openStammbaumView();
 		});
-		const tickButton = this.addStatusBarItem().createEl('button', {text:"Tick",cls:"tick-button"});
+		const tickButton = this.addStatusBarItem().createEl('p', {text:"Tick",cls:"tick-button"});
+		
 		tickButton.onclick = () => {
 			const file =this.app.workspace.getActiveFile();
 			if (!file) return;
-			this.tickFile(file);
+			this.toggleTick(file);
+			new Notice(`Ticked file ${file.basename} to `,1000);
+
+			tickButton.toggleClass("ticked",this.settings.tickedFiles.contains('|'+this.app.workspace.getActiveFile()?.path || "false" +'|'));
 		};
+		tickButton.toggleClass("ticked",this.settings.tickedFiles.contains('|'+this.app.workspace.getActiveFile()?.path || "false" +'|'));
 	}
-	tickFile(file: TFile | null){
-		if(!(file instanceof TFile)) {console.error(`Could not tick file ${file}. Appears to not be a valid TFile object`);return;}
+	tickFile(file: TFile){
 		if(!this.settings.tickedFiles.contains('|' + file.path + '|')) this.settings.tickedFiles = this.settings.tickedFiles.concat('|' + file.path + '|');
 		if(!this.settings.tickableFiles.contains('|' + file.path + '|')) this.settings.tickableFiles = this.settings.tickableFiles.concat('|' + file.path + '|');
-		console.debug(file);
+		console.debug(`Ticked ${file.basename}`);
 		this.saveData(this.settings).catch(e => {console.error(e)});
 	}
+	untickFile(file: TFile){
+		this.settings.tickedFiles = this.settings.tickedFiles.split('|').filter(f => f !== file.path).join('|');
+		console.debug(`Unticked ${file.basename}`);
+		this.saveData(this.settings).catch(e => {console.error(e)});
+	}
+	toggleTick(file: TFile | null){
+		if(!(file instanceof TFile)) {console.error(`Could not tick file ${file}. Appears to not be a valid TFile object`);return;}
+		if(!this.settings.tickedFiles.contains('|' + file.path + '|')) this.tickFile(file);
+		else this.untickFile(file);
+
+		// TODO
+		}
 	async openStammbaumView() {
 		const {workspace} = this.app;
 		let leaf: WorkspaceLeaf;

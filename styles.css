@@ -78,4 +78,11 @@ If your plugin does not need CSS, delete this file.
 }
 .tick-button {
 	font-family: 'Courier New', Courier, monospace;
+	hover {
+		background-color: gray;
+		color: lightgrey;
+	}
+}
+.ticked {
+	background-color: #542121;
 }

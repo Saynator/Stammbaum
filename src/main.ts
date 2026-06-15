@@ -6,7 +6,7 @@ import { StammbaumView, VIEW_TYPE_STAMMBAUM } from 'stammbaumView';
 
 export default class StammbaumPlugin extends Plugin {
 	settings!: StammbaumPluginSettings;
-	
+	tickButton!: HTMLElement;
 	async onload() {
 		await this.loadSettings();
 
@@ -78,6 +78,19 @@ export default class StammbaumPlugin extends Plugin {
 			}
 		});
 		this.addCommand({
+			id: 'remove-tickable',
+			name: 'Make file untickable',
+			editorCallback: (editor: Editor) => {
+				const file = this.app.workspace.getActiveFile();
+				if (!file) return;
+				if(this.settings.tickableFiles.contains(file.path)){
+					this.settings.tickedFiles = this.settings.tickedFiles.split('|').filter(f => f !== file.path).join('|');
+					this.settings.tickableFiles = this.settings.tickableFiles.split('|').filter(f => f !== file.path).join('|');
+					console.debug(`Removed ${file.basename}`);
+					this.saveData(this.settings).catch(e => {console.error(e)});
+					this.updateTickButton(this.tickButton);
+			}}});
+		this.addCommand({
 			id: 'insert-random-name',
 			name: 'Insert random name',
 
@@ -89,8 +102,6 @@ export default class StammbaumPlugin extends Plugin {
 					return names[Math.floor(Math.random() * names.length)];
 				}
 				).catch(err => {return console.error(err);}) : 'Error';
-				
-				
 				editor.replaceSelection(String(randomName) || '');
 			}
 		});
@@ -133,26 +144,36 @@ export default class StammbaumPlugin extends Plugin {
 			await this.openStammbaumView();
 		});
 		const tickButton = this.addStatusBarItem().createEl('p', {text:"Tick",cls:"tick-button"});
-		
 		tickButton.onclick = () => {
 			const file =this.app.workspace.getActiveFile();
 			if (!file) return;
 			this.toggleTick(file);
-			new Notice(`Ticked file ${file.basename} to `,1000);
-
-			tickButton.toggleClass("ticked",this.settings.tickedFiles.contains('|'+this.app.workspace.getActiveFile()?.path || "false" +'|'));
+			this.updateTickButton(tickButton)
 		};
+		this.tickButton=tickButton;
+		this.app.workspace.on('active-leaf-change',(leaf: WorkspaceLeaf | null) => {this.updateTickButton(tickButton)});
 		tickButton.toggleClass("ticked",this.settings.tickedFiles.contains('|'+this.app.workspace.getActiveFile()?.path || "false" +'|'));
 	}
+	updateTickButton(tickButton: HTMLElement){
+		const isTicked = this.settings.tickedFiles.contains('|'+this.app.workspace.getActiveFile()?.path || "#" +'|');
+		const isTickable = this.settings.tickableFiles.contains('|'+this.app.workspace.getActiveFile()?.path || "#" +'|');
+		tickButton.toggleClass("ticked",isTicked);
+		tickButton.toggleClass("untickable",!isTickable);
+		if(isTicked) tickButton.textContent = "Untick";
+		else tickButton.textContent = "Tick";
+	}
+	
 	tickFile(file: TFile){
 		if(!this.settings.tickedFiles.contains('|' + file.path + '|')) this.settings.tickedFiles = this.settings.tickedFiles.concat('|' + file.path + '|');
 		if(!this.settings.tickableFiles.contains('|' + file.path + '|')) this.settings.tickableFiles = this.settings.tickableFiles.concat('|' + file.path + '|');
 		console.debug(`Ticked ${file.basename}`);
+		new Notice(`Ticked file ${file.basename}`,1000);
 		this.saveData(this.settings).catch(e => {console.error(e)});
 	}
 	untickFile(file: TFile){
 		this.settings.tickedFiles = this.settings.tickedFiles.split('|').filter(f => f !== file.path).join('|');
 		console.debug(`Unticked ${file.basename}`);
+		new Notice(`Unticked file ${file.basename}`,1000);
 		this.saveData(this.settings).catch(e => {console.error(e)});
 	}
 	toggleTick(file: TFile | null){
@@ -162,6 +183,7 @@ export default class StammbaumPlugin extends Plugin {
 
 		// TODO
 		}
+	
 	async openStammbaumView() {
 		const {workspace} = this.app;
 		let leaf: WorkspaceLeaf;

@@ -189,6 +189,5 @@ export class StammbaumPluginSettingsTabs extends PluginSettingTab {
 					this.plugin.settings.dateGroupWeights = value;
 					await this.plugin.saveSettings();
 				}));
-
 	}
 }

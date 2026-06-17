@@ -3,7 +3,6 @@ import { DEFAULT_SETTINGS, StammbaumPluginSettings } from "settings";
 interface customDateType {
 	// The display name of the date type
 	name: string
-	
 	// @property
 	// Context Sensitive Grammar
 	//
@@ -23,18 +22,20 @@ interface customDateType {
 	};
 
 export class customDate {
-	
-	public static dateTypes = Array<customDateType>();
 
+	public static basicDateType: customDateType = { name: "Basic ahh dates", tokens: [{ name: "Minute", range: 60 }] };
+	public static dateTypes = new Map<string,customDateType>([["basicDateType", customDate.basicDateType]]);
+	public static defaultDateType = this.basicDateType;
 	settings!: StammbaumPluginSettings;
 	dateTime: number;
 	dateString: string;
+	dateType: customDateType;
 
-	constructor(dateString: string, settings: StammbaumPluginSettings);
-	constructor(date: Date, settings: StammbaumPluginSettings);
-	constructor(dateTime: number, settings: StammbaumPluginSettings);
-	constructor(date: undefined, settings: StammbaumPluginSettings);
-	constructor(date: string | Date | number | undefined, settings: StammbaumPluginSettings) {
+	constructor(dateString: string, dateType?: customDateType, settings?: StammbaumPluginSettings);
+	constructor(date: Date, dateType?: customDateType, settings?: StammbaumPluginSettings);
+	constructor(dateTime: number, dateType?: customDateType, settings?: StammbaumPluginSettings);
+	constructor(date: undefined, dateType?: customDateType, settings?: StammbaumPluginSettings);
+	constructor(date: string | Date | number | undefined, dateType?: customDateType, settings?: StammbaumPluginSettings) {
 		this.settings = settings || DEFAULT_SETTINGS;
 		if (typeof date === "number") {
 			this.dateTime = date;
@@ -46,20 +47,10 @@ export class customDate {
 			this.dateTime = date instanceof Date ? date.getTime() : this.getValue();
 			this.dateString = date instanceof Date ? date.toISOString() : date;
 		}
-		} catch (e) {
-			console.error(`Invalid date pattern "${this.settings.datePattern}". Using default pattern.`);
-			this.pattern = RegExp(DEFAULT_SETTINGS.datePattern || '');
-		}
-		this.groupPriority = this.settings.dateGroupPriority.split(',');
-		this.groupWeight = new Map<string,number>();
-		const groupWeights = this.settings.dateGroupWeights.split(',').map(n => {return parseInt(n)});
-		this.groupPriority.forEach((group,i) => {
-			if (i >= groupWeights.length) return;
-			this.groupWeight.set(group, groupWeights[i] ?? 0);
-		});
+		this.dateType = dateType || customDate.defaultDateType;
 	}
 	toString() : string{
-		return this.dateString ? this.dateString : 'not implemented';
+		return this.dateString ? this.dateString : this.makeStringfromValue();
 	}
 
 	getValue() : number{
@@ -70,6 +61,22 @@ export class customDate {
 	}
 	[Symbol.toPrimitive](hint: string): string | number {
 		return hint === 'string' ? this.toString() : this.getValue();
+	}
+	makeStringfromValue() : string {
+
+		this.dateString = "";
+		for (const token of this.dateType.tokens) {
+			if (typeof token.range === "number") {
+				const tokenTime = this.dateTime % token.range;
+				this.dateString.concat(token.representation ? token.representation.replace("%s",tokenTime.toString()) : tokenTime.toString() ,this.dateString);
+			}
+			else {
+				for(let subToken of token.range){
+					// TODO
+				}
+			}
+		}
+		return this.dateString;
 	}
 	parseCustomStringValue(dateString: string, forceRanges = false) : number {
 		return 0;

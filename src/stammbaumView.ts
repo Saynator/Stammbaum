@@ -27,6 +27,7 @@ export const VIEW_TYPE_STAMMBAUM = 'stammbaum-view';
 export class StammbaumView extends ItemView {
 	plugin: StammbaumPlugin;
 	stammbaumElements: StammbaumElement[] = [];
+	markedElement: StammbaumElement | undefined;
 	constructor(leaf: WorkspaceLeaf, plugin: StammbaumPlugin) {
 		super(leaf);
 		this.plugin = plugin;
@@ -43,7 +44,11 @@ export class StammbaumView extends ItemView {
 		container.empty();
 		const stParent = container.createEl('div', { cls: 'stammbaum-parent' });
 		stParent.style.position = 'relative';
-
+		// Add Scrolling Listener
+		container.addEventListener('scroll', (event: Event) => {
+			console.debug("SCROLLED");
+		})
+		// Get all files and test if they are relevant to the Stammbaum
 		const files = this.app.vault.getMarkdownFiles();
 		const fileMetadata = await Promise.all(
 			files.map(async (file) => {
@@ -56,6 +61,11 @@ export class StammbaumView extends ItemView {
 				return {file, relevantMetadata};
 			})
 		);
+		// Break condition if nothing relevant was found
+		if(!fileMetadata || fileMetadata.length == 0) {
+			stParent.createEl('h1',{text: "No relevant files found :(", cls: 'stammbaum-no-relevant-files'});
+			return;
+		};
 		fileMetadata.filter((data => data != undefined));
 		fileMetadata.sort((a, b) => { // Sort by date of birth
 			if (!a || !b) return 0;
@@ -64,8 +74,11 @@ export class StammbaumView extends ItemView {
 			return dateA.getValue() < dateB.getValue() ? -1 : dateA.getValue() > dateB.getValue() ? 1 : 0;
 		});
 		const oldest = fileMetadata[0] ? fileMetadata[0].relevantMetadata.dateOfBirth.getValue() : 0;
-		const youngest = fileMetadata[fileMetadata.length-1] ? fileMetadata[fileMetadata.length - 1].relevantMetadata.dateOfBirth.getValue() : 0;
+		const youngest = fileMetadata[fileMetadata.length - 1]?.relevantMetadata?.dateOfBirth?.getValue() ?? 0;
 		let col = 0;
+		const rows = [];
+		//const row_batch_size = this.plugin.settings.row_batch_size;
+		// Place the Entries in the view
 		for (const fileMeta of fileMetadata) {
 			const file = fileMeta?.file;
 			const relevantMetadata = fileMeta?.relevantMetadata;
@@ -82,6 +95,10 @@ export class StammbaumView extends ItemView {
 			//Calculate row
 			const row = youngest && oldest && youngest != oldest ? (stElement.dateOfBirth.getValue() - youngest)/(oldest-youngest): 0.5;
 
+			// Batch rows
+			// TODO
+			// Place Elements
+
 			stElement.htmlElement = stParent.createEl('div', { cls: 'stammbaum-element' });
 			stElement.htmlElement.setCssProps({
 				position: 'absolute',
@@ -89,7 +106,16 @@ export class StammbaumView extends ItemView {
 				top: `${/*Number(stParent.getBoundingClientRect().height/row) * */ 100+row+/*stElement.htmlElement.getBoundingClientRect().height/2*/ + 10}px`,
 				'touch-action': 'none'
 			});
-			
+			// Add click listener
+			stElement.htmlElement.addEventListener('click', (evt) => {
+				evt.preventDefault();
+				if(this.markedElement) {
+					createLineage(this.markedElement,stElement);
+					this.markedElement = undefined;
+				}
+				else this.markedElement = stElement;
+			});
+			// Add Title
 			stElement.htmlElement.createEl('h3', { text: file.basename, cls: 'stammbaum-name' }).addEventListener('click', (evt) => {
 				evt.preventDefault();
 				void this.app.workspace.openLinkText(file.basename, '', false);
@@ -162,6 +188,40 @@ export class StammbaumView extends ItemView {
 				}
 			});
 		});
+		// Add sidebar timeline
+		const timeline = container.createEl('div',{cls: "stammbaum-timeline"});
+		timeline.setCssProps({
+			position: "absolute",
+			top : "0px",
+			right :"0px",
+			width : "30px",
+			height : container.getBoundingClientRect().height.toString() + "px"
+		});
+		for(let i = 0; i<rows.length ; i++){
+			timeline.createEl('div',{cls: "stammbaum-timeline-batch"}).setCssProps({
+				position: "absolute",
+				top : `${(i/rows.length)*100}%`,
+				left : "0px",
+				width : "100%",
+				height : "3px",
+				'background-color': "#000"
+			});
+		}
+		timeline.createEl('p',{text: "Hii",cls: "stammbaum-timeline-entry"});
 	}
 	async onClose() {}
 }
+function createLineage(element1: StammbaumElement, element2: StammbaumElement) {
+	/*
+	This function is supposed to connect to elements via a valid lineage that generates the files on the go.
+	It should:
+		- Connect Last names in a way that fits a specified rule.
+		- Make valid relationships
+		- Use namesets or create names based on a rule.
+	*/
+	if (element1 == element2) return;
+	if (!element1.dateOfBirth || !element2.dateOfBirth) return;
+
+	Math.abs(element1.dateOfBirth.getValue()-element2.dateOfBirth.getValue())
+}
+

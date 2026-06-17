@@ -46,8 +46,6 @@ export class customDate {
 			this.dateTime = date instanceof Date ? date.getTime() : this.getValue();
 			this.dateString = date instanceof Date ? date.toISOString() : date;
 		}
-		try {
-			this.pattern = RegExp(this.settings.datePattern);
 		} catch (e) {
 			console.error(`Invalid date pattern "${this.settings.datePattern}". Using default pattern.`);
 			this.pattern = RegExp(DEFAULT_SETTINGS.datePattern || '');

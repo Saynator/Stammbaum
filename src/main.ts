@@ -1,4 +1,4 @@
-import {App, Editor, MarkdownEditView, MarkdownView, Modal, normalizePath, Notice, Plugin, TFile, WorkspaceLeaf} from 'obsidian';
+import {App, Editor, MarkdownView, Modal, normalizePath, Notice, Plugin, TFile, WorkspaceLeaf} from 'obsidian';
 import {DEFAULT_SETTINGS, StammbaumPluginSettings, StammbaumPluginSettingsTabs} from "./settings";
 import { getRelevantMetadata } from 'metadata';
 import { StammbaumView, VIEW_TYPE_STAMMBAUM } from 'stammbaumView';
@@ -19,6 +19,7 @@ export default class StammbaumPlugin extends Plugin {
 					console.debug(`Unticked ${file.basename}`);}
 				});
 				this.saveData(this.settings).catch(e => {console.error(e)});
+				this.updateTickButton(tickButton);
 			}
 		});
 		this.addCommand({
@@ -26,6 +27,7 @@ export default class StammbaumPlugin extends Plugin {
 			name: 'Tick this file',
 			editorCallback: () => {
 				this.tickFile(this.app.workspace.getActiveFile());
+				this.updateTickButton(tickButton);
 			}
 		});
 		this.addCommand({

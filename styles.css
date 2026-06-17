@@ -83,3 +83,9 @@
 .untickable {
 	text-decoration: line-through;	
 }
+.stammbaum-timeline {
+	background-color: grey;
+}
+.stammbaum-no-relevant-files {
+	font-family: 'Arial', Courier, monospace;
+}
